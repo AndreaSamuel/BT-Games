@@ -6,6 +6,11 @@ SoftwareSerial BlueT(RX,TX);
 String rep = "";
 int mode;
 
+String couleur[4] = {"rouge","vert","bleue","jaune"};
+String Couleur[4] = {"Pique","Trèfle","Coeur","Carreau"};
+String Valeur[13] = {"AS","2","3","4","5","6","7","8","9","10","Valet","Dame","Roi"};
+int RecBJ[2];
+
 void setup() {
   randomSeed(analogRead(0));
   Serial.begin(9600);
@@ -27,24 +32,30 @@ void loop(){ //Menu Principal
     Serial.println(rep);
     
     if(rep=="M"){
+      BlueT.print("2");
       Serial.println("Mode Multi");
       mode = 2;      
     }
     else if(rep=="S"){
+      BlueT.print("1");
       Serial.println("Mode Solo");
       mode = 1;
     }
     else if(rep=="1"){ //Lance Reflex
-     ReflexCLY(mode);  
+     BlueT.print("R");
+     ReflexCLI(mode);
     }
     else if(rep=="2"){ //Lance Simon
-      SimonCLY(mode);
+      BlueT.print("S");
+      SimonCLI(mode);
     }
     else if(rep=="3"){ //Lance Mastermind
-      MastermindCLY(mode);
+      BlueT.print("M");
+      MastermindCLI(mode);
     }
     else if(rep=="4"){ //Lance BlackJack
-      BlackJackCLY(mode);
+      BlueT.print("B");
+      BlackJackCLI(mode);
     }
     else{
       Serial.println("Mauvaise commande");
@@ -78,7 +89,7 @@ void viderBT() {
   }
 }
 
-void ReflexCLY(int mode){
+void ReflexCLI(int mode){
   int Score = 0;
   String pos[4] = {"A","B","C","D"};
   
@@ -139,16 +150,15 @@ void ReflexCLY(int mode){
   Serial.println(Score);
   Serial.println("~~~~~Fini~~~~~");
   viderBT();
-  BlueT.print("1");
+  BlueT.print("F");
 }
 
 
 
-void SimonCLY(int mode){ //jeuSimon
+void SimonCLI(int mode){ //jeuSimon
   bool game = true;
   int j = 0;
   int Tapp = 1000;
-  String Couleur[4] = {"rouge","vert","bleue","jaune"};
   String SuiteCouleur[40];
 
     viderBT();
@@ -157,7 +167,7 @@ void SimonCLY(int mode){ //jeuSimon
     j++;
     int i = 0;
     int r = random(4);
-    String Cr = Couleur[r];
+    String Cr = couleur[r];
     SuiteCouleur[j-1]=Cr;
     
     Serial.println("~~~~~~~~~~~~~");
@@ -167,7 +177,7 @@ void SimonCLY(int mode){ //jeuSimon
     for (i=0; i<j; i++){
       Serial.println(SuiteCouleur[i]);
       delay(Tapp);
-      Tapp = Tapp*0.96;
+      Tapp = Tapp*0.95;
     }
     viderBT();
     
@@ -234,12 +244,12 @@ void SimonCLY(int mode){ //jeuSimon
   Serial.println(j-1);
   Serial.println("~~~~~Fini~~~~~");
   viderBT();
-  BlueT.print("2");
+  BlueT.print("F");
 }
 
 
 
-void MastermindCLY(int mode){
+void MastermindCLI(int mode){
   int nbR = 0;
   int nbV = 0;
   int nbB = 0;
@@ -253,7 +263,6 @@ void MastermindCLY(int mode){
   int Ess = 1;
   int i = 0;
   
-  String couleur[4] = {"rouge","vert","bleue","jaune"};
   String SCouleur[4];
   String RepCouleur[4];
 
@@ -388,147 +397,181 @@ void MastermindCLY(int mode){
   Serial.println(Ess);
   Serial.println("~~~~~Fini~~~~~");
   viderBT();
-  BlueT.print("3");
+  BlueT.print("F");
 }
 
 
 
-void BlackJackCLY(int mode){
+void BlackJackCLI(int mode){
+  int dejaT = 0;
+  int JeuB[3] = {0,0,0};
+  int JeuJ1[3] = {0,0,0};
+  int JeuJ2[3] = {0,0,0};
   int EtP = 0;
-  int CarteTB = 1;
-  int CarteTJ = 1;
-  int totB = 0;
-  int totJ = 0;
-  int ASb = 0;
-  int ASj = 0;
-  String Couleur[4] = {"Pique","Trèfle","Coeur","Carreau"};
-  String Valeur[13] = {"AS","2","3","4","5","6","7","8","9","10","Valet","Dame","Roi"};
 
   Serial.println("~~~~~~~~~~~~~");
   Serial.println("C'est parti !!");
 
   //Tirage premiere carte Banque
-  int r1 = random(4);
-  int r2 = random(13);
-  if (r2==0) {ASb++;}
-  totB += calBJ(r2);
   Serial.print("La Carte de la Banque: ");
-  Serial.print(Valeur[r2]);
-  Serial.print(" de ");
-  Serial.println(Couleur[r1]);
+  tirageC(JeuB[0],JeuB[1]);
+  JeuB[0] = RecBJ[0];
+  JeuB[1] = RecBJ[1];
+  JeuB[2]++;
   
   //Tirage premiere carte Joueur
-  r1 = random(4);
-  r2 = random(13);
-  if (r2==0) {ASj++;}
-  totJ += calBJ(r2);
-  Serial.print("Votre Carte: ");
-  Serial.print(Valeur[r2]);
-  Serial.print(" de ");
-  Serial.println(Couleur[r1]);
+  Serial.print("Carte du ");
+  if (mode==2){Serial.print("Premier ");}
+  Serial.print("Joueur: ");
+  tirageC(JeuJ1[0],JeuJ1[1]);
+  JeuJ1[0] = RecBJ[0];
+  JeuJ1[1] = RecBJ[1];
+  JeuJ1[2]++;
 
-  //Tour du Joueur
+  //Tirage deuxieme carte Joueur
+  if (mode==2) {
+    Serial.print("Carte du Deuxième Joueur: ");
+    tirageC(JeuJ2[0],JeuJ2[1]);
+    JeuJ2[0] = RecBJ[0];
+    JeuJ2[1] = RecBJ[1];
+    JeuJ2[2]++;
+  }
+
+  //Tour du Joueur 1
   Serial.println("~~~~~~~~~~~~~");
-  Serial.println("A vous de jouer");
+  Serial.print("Au tour du ");
+  if (mode==2){Serial.print("Premier ");}
+  Serial.println("Joueur");
   Serial.print("Total Joueur Actuel: ");
-  Serial.println(totJ);
+  Serial.println(JeuJ1[0]);
   viderBT();
   while (true) {
     rep = "";
     rep = lireBT();
     
     if (rep=="C"){
-      CarteTJ++;
-      r1 = random(4);
-      r2 = random(13);
-      Serial.print("Nouvelle Carte Joueur: ");
-      Serial.print(Valeur[r2]);
-      Serial.print(" de ");
-      Serial.println(Couleur[r1]);
-      if (r2==0) {ASj++;}
-      totJ += calBJ(r2);
-      if (totJ>21){
-        if (ASj>0){
-          totJ -= 10;
-          ASj--;
-        }
-        else{
-          Serial.print("Total Joueur Actuel: ");
-          Serial.println(totJ);
-          EtP=2;
-          delay(10);
-          break;
-        }
-      }
+      Serial.print("Nouvelle Carte du Joueur: ");
+      tirageC(JeuJ1[0],JeuJ1[1]);
+      JeuJ1[0] = RecBJ[0];
+      JeuJ1[1] = RecBJ[1];
+      JeuJ1[2]++;
       Serial.print("Total Joueur Actuel: ");
-      Serial.println(totJ);
+      Serial.println(JeuJ1[0]);
+      if (JeuJ1[0]>21){
+        dejaT+=1;
+        EtP = 1;
+        delay(10);
+        break;
+      }
     }
-    
     else if (rep=="R") {
-      break;
+        break;
     }
     delay(25);
   }
 
+  //Tour du Joueur 2
+  if (mode==2) {
+    Serial.println("~~~~~~~~~~~~~");
+    Serial.println("Au tour du Deuxième Joueur");
+    Serial.print("Total Joueur Actuel: ");
+    Serial.println(JeuJ2[0]);
+    viderBT();
+    while (true) {
+      rep = "";
+      rep = lireBT();
+      
+      if (rep=="C"){
+        Serial.print("Nouvelle Carte du Joueur: ");
+        tirageC(JeuJ2[0],JeuJ2[1]);
+        JeuJ2[0] = RecBJ[0];
+        JeuJ2[1] = RecBJ[1];
+        JeuJ2[2]++;
+        Serial.print("Total Joueur Actuel: ");
+        Serial.println(JeuJ2[0]);
+        if (JeuJ2[0]>21){
+            dejaT+=2;
+            EtP+=2;
+            delay(10);
+            break;
+          }
+        }
+        else if (rep=="R") {
+          break;
+        }
+        delay(25);
+    }
+  }
+  
   //Tour de la Banque
   Serial.println("~~~~~~~~~~~~~");
   Serial.println("A la banque de jouer");
   Serial.print("Total Banque Actuel: ");
-  Serial.println(totB);
-  while ((totB<17)and(EtP==0)) {
-    CarteTB++;
-    int r1 = random(4);
-    int r2 = random(13);
+  Serial.println(JeuB[0]);
+  while ( (JeuB[0]<17) and ( ((EtP!=3)and(mode==2)) or ((EtP!=1)and(mode==1)) ) ) {
     Serial.print("Nouvelle Carte Banque: ");
-    Serial.print(Valeur[r2]);
-    Serial.print(" de ");
-    Serial.println(Couleur[r1]);
-    if (r2==0) {ASb++;}
-    totB += calBJ(r2);
-    if (totB>21) {
-      if(ASb>0){
-        totB -= 10;
-        ASb--;
-      }
-      else{
-        EtP = 1;
-      }
-    }
+    tirageC(JeuB[0],JeuB[1]);
+    JeuB[0] = RecBJ[0];
+    JeuB[1] = RecBJ[1];
+    JeuB[2]++;
     Serial.print("Total Banque Actuel: ");
-    Serial.println(totB);
+    Serial.println(JeuB[0]);
+    if (JeuB[0]>21) {
+        EtP += 4;
+    }
   }
 
     //Calcul Gagnant
     Serial.println("~~~~~~~~~~~~~~");
-    if (EtP == 0) {
-      if (totJ==totB) {
-        Serial.print("Cartes Joueur :");
-        Serial.println(CarteTJ);
+    if ((EtP==0)or(EtP==1)or(EtP==2)) {
+      if((JeuJ1[0]==JeuB[0])or(JeuJ2[0]==JeuB[0])) {
         Serial.print("Cartes Banque :");
-        Serial.println(CarteTB);
-        if (CarteTJ<=CarteTB) {
-          EtP=1;
+        Serial.println(JeuB[2]);
+        if (JeuJ1[0]==JeuB[0]) {
+          Serial.print("Cartes Premier Joueur :");
+          Serial.println(JeuJ1[2]);
+          dejaT+=1;
+          if (JeuJ1[2]>=JeuB[2]) {EtP+=1;}
+          else {EtP+=4;}
         }
-        else{
-          EtP=2;
+        if (mode == 2) {
+          if (JeuJ2[0]==JeuB[0]) {
+            Serial.print("Cartes Deuxieme Joueur :");
+            Serial.println(JeuJ2[2]);
+            dejaT+=2;
+            if (JeuJ2[2]>=JeuB[2]) {EtP+=2;}
+            else {EtP+=4;}
+          }
         }
       }
-      else if (totJ>totB) {
-        EtP=1;
+      
+      if ((JeuJ1[0]<JeuB[0])and((dejaT!=1)or(dejaT!=3))) {EtP+=1;}
+      else {EtP+=4;}
+
+      if (mode==2) {
+        if (JeuJ2[0]<JeuB[0]and((dejaT!=2)or(dejaT!=3))) {EtP+=2;}
+        else {EtP+=4;}
       }
-      else {
-        EtP=2;
-      }
     }
-    if (EtP == 1) {
-      Serial.println("Le joueur remporte la victoire !!");
+    
+    if ((EtP == 3)) {
+      Serial.println("Les Joueurs ont perdu . . .");
     }
-    else {
-      Serial.println("Le joueur a perdu . . .");
+    else if ((EtP == 4)or(EtP == 8)) {
+      if (mode==2) {Serial.println("Les deux Joueurs remporte la victoire !!");}
+      else {Serial.println("Le Joueur remporte la victoire !!");}
     }
+    else if ((EtP==1)or(EtP == 5)) {
+      if (mode==2) {Serial.println("Le Deuxième Joueur remporte la victoire !!");}
+      else {Serial.println("Le Joueur a perdu . . .");}
+    }
+    else if (EtP == 6) {
+      Serial.print("Le Premier Joueur remporte la victoire !!");
+    }
+    Serial.println(EtP);
     Serial.println("~~~~~Fini~~~~~");
     viderBT();
-    BlueT.print("4");
+    BlueT.print("F");
 }
 
 int calBJ(int a) {
@@ -545,9 +588,30 @@ int calBJ(int a) {
   return res;
 }
 
+void tirageC(int a, int b) {
+  int r1 = random(4);
+  int r2 = random(13);
+  if (r2==0) {
+    b++;
+  }
+  a += calBJ(r2);
+  if (a>21){
+    if (b>0) {
+      a -= 10;
+      b--;
+    }
+  }
+  Serial.print(Valeur[r2]);
+  Serial.print(" de ");
+  Serial.println(Couleur[r1]);
+  RecBJ[0]=a;
+  RecBJ[1]=b;
+}
+
 void config(){
   while (BlueT.available()) {
     Serial.print(char(BlueT.read())); }
   while (Serial.available()) {
     BlueT.write(char(Serial.read())); }
 }
+  
